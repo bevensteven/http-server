@@ -1,8 +1,12 @@
 use std::thread;
+use std::sync::mpsc;
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
+    sender: mpsc::Sender<Job>,
 }
+
+struct Job;
 
 impl ThreadPool {
 
@@ -16,15 +20,17 @@ impl ThreadPool {
     pub fn new(size: usize) -> ThreadPool {
         assert!(size > 0);
 
-        let mut workers = Vec::with_capacity(size);
+        let (sender, receiver) = mpsc::channel();
 
+        let mut workers = Vec::with_capacity(size);
         for id in 0..size {
             // create some threads and store them in the vector
-            workers.push(Worker::new(id))
+            workers.push(Worker::new(id, receiver));
         }
 
         ThreadPool {
-            workers
+            workers,
+            sender,
         }
     }
 
@@ -43,8 +49,10 @@ struct Worker {
 }
 
 impl Worker {
-    pub fn new(id: usize) -> Worker {
-        let thread = thread::spawn(|| {});
+    pub fn new(id: usize, receiver: mpsc::Receiver<Job>) -> Worker {
+        let thread = thread::spawn(|| {
+            receiver;
+        });
 
         Worker {
             id,
