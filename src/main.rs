@@ -1,4 +1,6 @@
 use std::fs;
+use std::thread;
+use std::time::Duration;
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::io::prelude::*;
@@ -20,8 +22,14 @@ fn handle_connection(mut stream: TcpStream) {
 
     println!("Request: {}", String::from_utf8_lossy(&buffer[..]));
 
+    // "endpoints"
     let get = b"GET / HTTP/1.1\r\n";
+    let sleep = b"GET /sleep HTTP/1.1\r\n";
+
     let (status_line, filename) = if buffer.starts_with(get) {
+        ("HTTP/1.1 200 OK\r\n\r\n", "static/hello.html")
+    } else if buffer.starts_with(sleep) {
+        thread::sleep(Duration::from_secs(3));
         ("HTTP/1.1 200 OK\r\n\r\n", "static/hello.html")
     } else {
         ("HTTP/1.1 404 NOT FOUND\r\n\r\n", "static/404.html")
