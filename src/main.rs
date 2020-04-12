@@ -20,22 +20,17 @@ fn handle_connection(mut stream: TcpStream) {
 
     println!("Request: {}", String::from_utf8_lossy(&buffer[..]));
 
-    // validate request
     let get = b"GET / HTTP/1.1\r\n";
-    if buffer.starts_with(get) {
-        // come up with response
-        let contents = fs::read_to_string("static/hello.html").unwrap();
-        let response = format!("HTTP/1.1 200 OK\r\n\r\n{}", contents);
-
-        // write and flush response to client
-        stream.write(response.as_bytes()).unwrap();
-        stream.flush().unwrap();
+    let (status_line, filename) = if buffer.starts_with(get) {
+        ("HTTP/1.1 200 OK\r\n\r\n", "static/hello.html")
     } else {
-        let contents = fs::read_to_string("static/404.html").unwrap();
-        let response = format!("HTTP/1.1 404 NOT FOUND\r\n\r\n{}", contents);
+        ("HTTP/1.1 404 NOT FOUND\r\n\r\n", "static/404.html")
+    };
 
-        // write and flush response to client
-        stream.write(response.as_bytes()).unwrap();
-        stream.flush().unwrap();
-    }
+    let contents = fs::read_to_string(filename).unwrap();
+    let response = format!("{}{}", status_line, contents);
+
+    // write and flush response to client
+    stream.write(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
 }
